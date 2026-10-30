@@ -15,7 +15,9 @@ export default function TestimonialEditorModal({ testimonial = null, onClose, on
     testimonial?.photos || ['https://picsum.photos/seed/customer/800/800']
   );
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
-  const [order, setOrder] = useState(testimonial?.order !== undefined ? testimonial.order : 0);
+  const [order, setOrder] = useState(
+    testimonial?.order !== undefined && testimonial?.order !== null ? testimonial.order : ''
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -50,7 +52,7 @@ export default function TestimonialEditorModal({ testimonial = null, onClose, on
       customerDetail: customerDetail.trim(),
       quote: quote.trim(),
       photos: photos.slice(0, 4),
-      order: Number(order) || 0,
+      order: order !== '' && !Number.isNaN(Number(order)) ? Number(order) : null,
     };
 
     try {
@@ -205,15 +207,22 @@ export default function TestimonialEditorModal({ testimonial = null, onClose, on
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-              Display Sort Order
+            <label className="block text-xs font-bold uppercase tracking-wider text-amber-400 mb-1">
+              Position # (Carousel Slide Order)
             </label>
-            <input
-              type="number"
-              value={order}
-              onChange={(e) => setOrder(e.target.value)}
-              className="w-28 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs font-mono text-white focus:outline-none focus:border-amber-400"
-            />
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min="1"
+                value={order}
+                onChange={(e) => setOrder(e.target.value)}
+                placeholder="e.g. 1, 2, 3"
+                className="w-28 px-3.5 py-2 rounded-xl bg-slate-950 border border-amber-500/60 text-sm font-mono font-bold text-amber-300 focus:outline-none focus:border-amber-400"
+              />
+              <span className="text-xs text-slate-400">
+                1 = First Slide, 2 = Second Slide, etc. Controls rotation order on the main page.
+              </span>
+            </div>
           </div>
 
           {/* Footer */}

@@ -234,6 +234,67 @@ export default function AdminPage() {
     }
   };
 
+  // Quick Position Update Handlers
+  const handleUpdateProductPosition = async (id, newPosition) => {
+    const target = products.find((p) => p._id === id);
+    if (!target) return;
+    const parsedOrder =
+      newPosition === '' || newPosition === null ? null : Number(newPosition);
+    const updated = { ...target, order: parsedOrder };
+
+    const copy = products.map((p) => (p._id === id ? updated : p));
+    setProducts(copy);
+
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+      if (res.ok) {
+        showToast(
+          `Updated position for "${target.name}" to ${
+            parsedOrder !== null ? '#' + parsedOrder : 'Default'
+          }`
+        );
+      } else {
+        loadData();
+      }
+    } catch {
+      loadData();
+    }
+  };
+
+  const handleUpdateTestimonialPosition = async (id, newPosition) => {
+    const target = testimonials.find((t) => t._id === id);
+    if (!target) return;
+    const parsedOrder =
+      newPosition === '' || newPosition === null ? null : Number(newPosition);
+    const updated = { ...target, order: parsedOrder };
+
+    const copy = testimonials.map((t) => (t._id === id ? updated : t));
+    setTestimonials(copy);
+
+    try {
+      const res = await fetch('/api/admin/testimonials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+      if (res.ok) {
+        showToast(
+          `Updated position for "${target.customerName}" to ${
+            parsedOrder !== null ? '#' + parsedOrder : 'Default'
+          }`
+        );
+      } else {
+        loadData();
+      }
+    } catch {
+      loadData();
+    }
+  };
+
   // Inquiries Actions
   const handleDeleteInquiry = async (id) => {
     if (!window.confirm('Delete this inquiry record?')) return;
@@ -280,13 +341,31 @@ export default function AdminPage() {
     }
   };
 
-  // Filtered Products
-  const filteredProducts = products.filter((p) => {
+  // Filtered Products - sorted basis position numbering system (1, 2, 3...)
+  const sortedProducts = [...products].sort((a, b) => {
+    const hasA = a.order !== undefined && a.order !== null && a.order !== '';
+    const hasB = b.order !== undefined && b.order !== null && b.order !== '';
+    const orderA = hasA ? Number(a.order) : Infinity;
+    const orderB = hasB ? Number(b.order) : Infinity;
+    if (orderA !== orderB) return orderA - orderB;
+    return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+  });
+
+  const filteredProducts = sortedProducts.filter((p) => {
     const matchesQuery =
       (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.description || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCat = categoryFilter === 'all' || p.category?.slug === categoryFilter;
     return matchesQuery && matchesCat;
+  });
+
+  // Testimonials sorted basis position numbering system (1, 2, 3...)
+  const sortedTestimonials = [...testimonials].sort((a, b) => {
+    const hasA = a.order !== undefined && a.order !== null && a.order !== '';
+    const hasB = b.order !== undefined && b.order !== null && b.order !== '';
+    const orderA = hasA ? Number(a.order) : Infinity;
+    const orderB = hasB ? Number(b.order) : Infinity;
+    return orderA - orderB;
   });
 
   if (checkingAuth) {
@@ -560,7 +639,7 @@ export default function AdminPage() {
                     Vehicles & Heavy Equipment
                   </h2>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Manage vehicle cards, gallery images, and the 20-row Excel specification tables.
+                    Manage vehicle cards, position numbering (defines display order on main page), gallery images, and 30-row Excel specification tables.
                   </p>
                 </div>
 
@@ -648,6 +727,38 @@ export default function AdminPage() {
                               {p.availability || 'Ready'}
                             </span>
                           </div>
+                        </div>
+
+                        {/* Product Deck Position Numbering Bar */}
+                        <div className="px-3.5 py-2 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 font-mono">
+                              Position #
+                            </span>
+                            <input
+                              type="number"
+                              min="1"
+                              defaultValue={p.order ?? ''}
+                              key={`p-order-${p._id}-${p.order}`}
+                              onBlur={(e) => handleUpdateProductPosition(p._id, e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') e.target.blur();
+                              }}
+                              placeholder="—"
+                              className="w-14 px-2 py-0.5 text-center font-mono font-bold text-xs bg-slate-900 border border-slate-700 hover:border-amber-400 focus:border-amber-400 focus:outline-none rounded text-amber-300"
+                              title="Set position number for main page display (1 = First, 2 = Second...)"
+                            />
+                          </div>
+
+                          <span className="text-[10px] font-mono">
+                            {p.order !== null && p.order !== undefined && p.order !== '' ? (
+                              <span className="text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                                Card #{p.order}
+                              </span>
+                            ) : (
+                              <span className="text-slate-500">Unordered</span>
+                            )}
+                          </span>
                         </div>
 
                         {/* Content */}
@@ -858,12 +969,44 @@ export default function AdminPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {testimonials.map((t, idx) => (
+                {sortedTestimonials.map((t, idx) => (
                   <div
                     key={t._id || idx}
                     className="bg-[#131D2F] border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between"
                   >
                     <div>
+                      {/* Testimonial Position Numbering Bar */}
+                      <div className="flex items-center justify-between gap-2 p-2.5 mb-3 bg-slate-950/70 border border-slate-800/80 rounded-xl">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 font-mono">
+                            Position #
+                          </span>
+                          <input
+                            type="number"
+                            min="1"
+                            defaultValue={t.order ?? ''}
+                            key={`t-order-${t._id}-${t.order}`}
+                            onBlur={(e) => handleUpdateTestimonialPosition(t._id, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') e.target.blur();
+                            }}
+                            placeholder="—"
+                            className="w-14 px-2 py-0.5 text-center font-mono font-bold text-xs bg-slate-900 border border-slate-700 hover:border-amber-400 focus:border-amber-400 focus:outline-none rounded text-amber-300"
+                            title="Set slide position number for main page testimonial rotation (1 = First Slide, 2 = Second Slide...)"
+                          />
+                        </div>
+
+                        <span className="text-[10px] font-mono">
+                          {t.order !== null && t.order !== undefined && t.order !== '' ? (
+                            <span className="text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                              Slide #{t.order}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">Unordered</span>
+                          )}
+                        </span>
+                      </div>
+
                       <div className="flex items-center justify-between gap-3 mb-3">
                         <div>
                           <h3 className="font-display text-lg font-bold text-white">
@@ -874,7 +1017,7 @@ export default function AdminPage() {
                           </span>
                         </div>
                         <span className="text-xs font-mono text-slate-500 bg-slate-900 px-2 py-1 rounded">
-                          Slide #{idx + 1}
+                          Index #{idx + 1}
                         </span>
                       </div>
 

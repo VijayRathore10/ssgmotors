@@ -29,6 +29,9 @@ export default function ProductEditorModal({
   const [specifications, setSpecifications] = useState(product?.specifications || []);
   const [description, setDescription] = useState(product?.description || '');
   const [availability, setAvailability] = useState(product?.availability || 'Ready for Export');
+  const [order, setOrder] = useState(
+    product?.order !== undefined && product?.order !== null ? product.order : ''
+  );
   const [featured, setFeatured] = useState(product?.featured !== undefined ? product.featured : true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -92,6 +95,7 @@ export default function ProductEditorModal({
       specifications,
       description: description.trim(),
       availability,
+      order: order !== '' && !Number.isNaN(Number(order)) ? Number(order) : null,
       featured,
     };
 
@@ -128,7 +132,7 @@ export default function ProductEditorModal({
               {name && <span className="text-xs text-amber-400 font-mono font-normal">({name})</span>}
             </h3>
             <p className="text-xs text-slate-400">
-              Configure vehicle details, gallery images, and the 20-row Excel specifications table.
+              Configure vehicle details, position numbering, gallery images, and the 30-row Excel specifications table.
             </p>
           </div>
           <button
@@ -147,8 +151,8 @@ export default function ProductEditorModal({
             </div>
           )}
 
-          {/* Row 1: Name, Slug, Category, Availability */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Row 1: Name, Slug, Category, Availability, Position */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="sm:col-span-2">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
                 Vehicle Title / Make & Model *
@@ -195,6 +199,21 @@ export default function ProductEditorModal({
                 <option value="Low Hours / Inspected">Low Hours / Inspected</option>
                 <option value="Reserved">Reserved</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">
+                Position # (Order)
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={order}
+                onChange={(e) => setOrder(e.target.value)}
+                placeholder="e.g. 1, 2, 3"
+                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-amber-500/60 text-sm font-mono font-bold text-amber-300 focus:outline-none focus:border-amber-400"
+                title="Cards on the main page are displayed in this numbered position order (1 = first)"
+              />
             </div>
           </div>
 
@@ -298,7 +317,7 @@ export default function ProductEditorModal({
             </div>
           </div>
 
-          {/* Section: The 2-Column, 20-Row Excel Specification Grid */}
+          {/* Section: The 2-Column, 30-Row Excel Specification Grid */}
           <div className="pt-2">
             <ExcelSpecificationsGrid
               specifications={specifications}

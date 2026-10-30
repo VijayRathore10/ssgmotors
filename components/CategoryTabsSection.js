@@ -30,6 +30,15 @@ export default function CategoryTabsSection({ categories = [], products = [] }) 
     return false;
   });
 
+  // Sort products basis position numbering system (1, 2, 3...)
+  const sortedFilteredProducts = [...filteredProducts].sort((a, b) => {
+    const hasA = a.order !== undefined && a.order !== null && a.order !== '';
+    const hasB = b.order !== undefined && b.order !== null && b.order !== '';
+    const orderA = hasA ? Number(a.order) : Infinity;
+    const orderB = hasB ? Number(b.order) : Infinity;
+    if (orderA !== orderB) return orderA - orderB;
+    return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+  });
 
   return (
     <section id="catalog" className="w-full bg-[#F3F6FA] border-y border-line/70 py-20 md:py-28 scroll-mt-20">
@@ -78,7 +87,7 @@ export default function CategoryTabsSection({ categories = [], products = [] }) 
         </div>
 
         {/* Products Grid - 2/2/2 layout (Total 6 elements: 2 columns per row or 3x2) */}
-        {filteredProducts.length === 0 ? (
+        {sortedFilteredProducts.length === 0 ? (
           <div className="bg-white border border-line rounded-xl p-12 text-center my-6 shadow-sm">
             <p className="text-graphite font-display text-lg mb-2">
               No products listed in this category yet.
@@ -95,7 +104,7 @@ export default function CategoryTabsSection({ categories = [], products = [] }) 
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((p) => (
+            {sortedFilteredProducts.map((p) => (
               <ProductCard key={p._id} product={p} />
             ))}
           </div>

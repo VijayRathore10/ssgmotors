@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ClipboardPaste, Sparkles, Trash2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 
-const MAX_ROWS = 20;
+const MAX_ROWS = 30;
 
 export default function ExcelSpecificationsGrid({ specifications = [], onChange }) {
-  // Initialize fixed 20 rows
+  // Initialize fixed 30 rows
   const [rows, setRows] = useState(() => {
     const initial = [];
     for (let i = 0; i < MAX_ROWS; i++) {
@@ -48,7 +48,7 @@ export default function ExcelSpecificationsGrid({ specifications = [], onChange 
   };
 
   const emitChange = (newRows) => {
-    // Clean: filter out completely blank rows, max 20 rows
+    // Clean: filter out completely blank rows, max 30 rows
     const cleaned = newRows
       .filter((r) => (r.label && r.label.trim()) || (r.value && r.value.trim()))
       .slice(0, MAX_ROWS)
@@ -151,7 +151,7 @@ export default function ExcelSpecificationsGrid({ specifications = [], onChange 
   };
 
   const clearAll = () => {
-    if (window.confirm('Clear all 20 specification rows?')) {
+    if (window.confirm('Clear all 30 specification rows?')) {
       const cleared = [];
       for (let i = 0; i < MAX_ROWS; i++) {
         cleared.push({ id: i, label: '', value: '' });
@@ -211,7 +211,7 @@ export default function ExcelSpecificationsGrid({ specifications = [], onChange 
         <div>
           <div className="flex items-center gap-2.5">
             <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-              2-Column Detailed Specifications (Max 20 Rows)
+              2-Column Detailed Specifications (Max 30 Rows)
             </h4>
             <span
               className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
@@ -318,13 +318,13 @@ export default function ExcelSpecificationsGrid({ specifications = [], onChange 
               onClick={applyPasteModal}
               className="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors cursor-pointer"
             >
-              Apply to 20 Rows
+              Apply to 30 Rows
             </button>
           </div>
         </div>
       )}
 
-      {/* 20-Row Table Grid */}
+      {/* 30-Row Table Grid */}
       <div className="max-h-[500px] overflow-y-auto rounded-lg border border-slate-700/80 bg-slate-950/60">
         <table className="w-full text-left text-xs border-collapse">
           <thead>

@@ -20,10 +20,10 @@ export default async function ProductPage({ params }) {
 
   if (!product || !product.name) return notFound();
 
-  // Filter out any blank/empty rows: empty rows will not be captured on the webpage (max 20 rows)
+  // Filter out any blank/empty rows: empty rows will not be captured on the webpage (max 30 rows)
   const specs = (product.specifications || [])
     .filter((s) => s && ((s.label && s.label.trim().length > 0) || (s.value && s.value.trim().length > 0)))
-    .slice(0, 20);
+    .slice(0, 30);
   const highlights = (product.highlights || []).filter(Boolean);
 
   return (
@@ -39,6 +39,7 @@ export default async function ProductPage({ params }) {
       </nav>
 
       <div className="grid lg:grid-cols-5 gap-10">
+        {/* Left Column: Gallery, Description, and Contact Us / Inquiry Form */}
         <div className="lg:col-span-3">
           <ImageCarousel images={product.gallery} alt={product.name} />
 
@@ -50,8 +51,17 @@ export default async function ProductPage({ params }) {
               <p className="text-base leading-relaxed text-steel/90">{product.description}</p>
             </div>
           )}
+
+          {/* Contact Us Form - positioned on left side below description */}
+          <div className="mt-8 pt-6 border-t border-line/80">
+            <h2 className="mono-label text-xs uppercase text-amber-dark font-bold tracking-wider mb-3">
+              Request Export Quotation & Inspection
+            </h2>
+            <InquiryForm productName={product.name} />
+          </div>
         </div>
 
+        {/* Right Column: Title, Highlights, and 30-Row Specifications Table */}
         <div className="lg:col-span-2">
           <h1 className="font-display text-3xl md:text-4xl font-bold mb-3 leading-tight">
             {product.name}
@@ -85,8 +95,6 @@ export default async function ProductPage({ params }) {
               </table>
             </div>
           )}
-
-          <InquiryForm productName={product.name} />
         </div>
       </div>
     </section>

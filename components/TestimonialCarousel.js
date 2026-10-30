@@ -147,7 +147,16 @@ export default function TestimonialCarousel({ testimonials }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  const total = testimonials?.length || 0;
+  // Sort basis position numbering system (1, 2, 3...)
+  const sortedTestimonials = [...(testimonials || [])].sort((a, b) => {
+    const hasA = a.order !== undefined && a.order !== null && a.order !== '';
+    const hasB = b.order !== undefined && b.order !== null && b.order !== '';
+    const orderA = hasA ? Number(a.order) : Infinity;
+    const orderB = hasB ? Number(b.order) : Infinity;
+    return orderA - orderB;
+  });
+
+  const total = sortedTestimonials.length;
 
   // Auto-advance entire testimonial carousel every 3 seconds
   useEffect(() => {
@@ -160,7 +169,7 @@ export default function TestimonialCarousel({ testimonials }) {
 
   if (!total) return null;
 
-  const current = testimonials[currentIndex];
+  const current = sortedTestimonials[currentIndex];
   const isAlternate = currentIndex % 2 !== 0;
 
   const prevTestimonial = () => {
@@ -189,7 +198,7 @@ export default function TestimonialCarousel({ testimonials }) {
           <div className="flex items-center gap-3 self-end sm:self-auto">
             {/* Quick jump pagination bars */}
             <div className="flex items-center gap-1.5 mr-2">
-              {testimonials.map((_, idx) => (
+              {sortedTestimonials.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentIndex(idx)}
