@@ -4,13 +4,22 @@ import { getProductBySlug, getProducts } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 export const dynamicParams = true;
-export const revalidate = 0;
 
 export async function generateStaticParams() {
   const products = await getProducts();
-  return products.map((p) => ({ slug: p.slug }));
+  return (products || []).map((p) => ({ slug: p.slug }));
+}
+
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product) return { title: 'Vehicle Details | SSG Motors' };
+  return {
+    title: `${product.name} | SSG Motors`,
+    description: product.description || `Specifications and export quotation for ${product.name}.`,
+  };
 }
 
 

@@ -5,8 +5,7 @@ import AboutSection from '@/components/AboutSection';
 import FaqSection from '@/components/FaqSection';
 import { getCategories, getProducts, getTestimonials, getSiteSettings } from '@/lib/data';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 60;
 
 export default async function HomePage() {
   const [categories, products, testimonials, settings] = await Promise.all([

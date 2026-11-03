@@ -45,6 +45,7 @@ export default function ProductCard({ product }) {
   return (
     <Link
       href={`/product/${product.slug}`}
+      prefetch={true}
       className="group flex flex-col bg-white border border-line hover:border-amber hover:shadow-xl transition-all duration-300 rounded-xl overflow-hidden"
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-steel/5 rounded-t-xl">
