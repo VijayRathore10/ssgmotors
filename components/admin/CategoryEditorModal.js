@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import ImageUploadButton from './ImageUploadButton';
 import { X, Save, Image as ImageIcon } from 'lucide-react';
 
 export default function CategoryEditorModal({ category = null, onClose, onSave }) {
@@ -131,14 +132,21 @@ export default function CategoryEditorModal({ category = null, onClose, onSave }
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-              Cover Image URL
-            </label>
+            <div className="flex items-center justify-between mb-1 gap-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                Cover Photography
+              </label>
+              <ImageUploadButton
+                buttonStyle="compact"
+                label="Upload Image"
+                onUploaded={(url) => setImage(url)}
+              />
+            </div>
             <input
               type="text"
               value={image}
               onChange={(e) => setImage(e.target.value)}
-              placeholder="https://... or /image.png"
+              placeholder="https://... or upload image above"
               className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs font-mono text-white focus:outline-none focus:border-amber-400 mb-2"
             />
             <div className="relative aspect-[16/9] rounded-xl overflow-hidden border border-slate-800 bg-slate-950">

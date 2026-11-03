@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import ImageUploadButton from './ImageUploadButton';
 import { Save, Plus, Trash2, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 
 export default function SiteSettingsEditor({ settings = {}, onSave }) {
@@ -101,24 +102,37 @@ export default function SiteSettingsEditor({ settings = {}, onSave }) {
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newHeroImageUrl}
-            onChange={(e) => setNewHeroImageUrl(e.target.value)}
-            placeholder="Enter high-res image URL (https://...)"
-            className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleAddHeroImage(e);
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="flex-1 flex gap-2">
+            <input
+              type="text"
+              value={newHeroImageUrl}
+              onChange={(e) => setNewHeroImageUrl(e.target.value)}
+              placeholder="Enter high-res image URL (https://...)"
+              className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddHeroImage(e);
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleAddHeroImage}
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition-colors cursor-pointer"
+            >
+              Add URL
+            </button>
+          </div>
+          <span className="text-slate-500 text-[11px] uppercase font-mono text-center sm:text-left self-center">
+            or
+          </span>
+          <ImageUploadButton
+            buttonStyle="secondary"
+            multiple={true}
+            label="Upload Hero Slides"
+            onMultipleUploaded={(urls) => {
+              setHeroImages([...heroImages, ...urls]);
             }}
           />
-          <button
-            type="button"
-            onClick={handleAddHeroImage}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition-colors cursor-pointer"
-          >
-            Add Slide
-          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">

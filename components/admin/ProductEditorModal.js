@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import ExcelSpecificationsGrid from './ExcelSpecificationsGrid';
+import ImageUploadButton from './ImageUploadButton';
 import { X, Plus, Trash2, Image as ImageIcon, Save, Check } from 'lucide-react';
 
 export default function ProductEditorModal({
@@ -220,14 +221,21 @@ export default function ProductEditorModal({
           {/* Row 2: Card Thumbnail Image & Highlights */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                Primary Card Image URL
-              </label>
+              <div className="flex items-center justify-between mb-1 gap-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Primary Card Image
+                </label>
+                <ImageUploadButton
+                  buttonStyle="compact"
+                  label="Upload File"
+                  onUploaded={(url) => setCardImage(url)}
+                />
+              </div>
               <input
                 type="text"
                 value={cardImage}
                 onChange={(e) => setCardImage(e.target.value)}
-                placeholder="https://... or /image.png"
+                placeholder="https://... or click Upload File"
                 className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400 mb-2 font-mono"
               />
               <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center">
@@ -339,17 +347,25 @@ export default function ProductEditorModal({
             />
           </div>
 
-          {/* Photo Gallery URLs */}
+          {/* Photo Gallery URLs & Direct Upload */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Vehicle Gallery Images (Detail Page Carousel)
-            </label>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Vehicle Gallery Images (Detail Page Carousel)
+              </label>
+              <ImageUploadButton
+                buttonStyle="secondary"
+                multiple={true}
+                label="Upload Photos from Device (Multiple)"
+                onMultipleUploaded={(urls) => setGallery([...gallery, ...urls])}
+              />
+            </div>
             <div className="flex gap-2 mb-3">
               <input
                 type="text"
                 value={newGalleryUrl}
                 onChange={(e) => setNewGalleryUrl(e.target.value)}
-                placeholder="Enter image URL (https://...)"
+                placeholder="Or paste image URL (https://...)"
                 className="flex-1 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400 font-mono"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAddGalleryUrl(e);
@@ -360,7 +376,7 @@ export default function ProductEditorModal({
                 onClick={handleAddGalleryUrl}
                 className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition-colors cursor-pointer"
               >
-                Add Image
+                Add URL
               </button>
             </div>
 
