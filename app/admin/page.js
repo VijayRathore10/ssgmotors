@@ -474,14 +474,14 @@ export default function AdminPage() {
                 Nik Exports
               </span>
               <span className="text-[10px] font-mono text-amber-400 uppercase font-semibold">
-                Local Admin Portal
+                Firebase Cloud Admin
               </span>
             </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1 rounded-full border border-slate-700/60 text-[11px] text-emerald-400">
+          <div className="hidden sm:flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1 rounded-full border border-emerald-500/30 text-[11px] text-emerald-400">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>100% In-App Local Database</span>
+            <span>Connected to Firebase (Firestore & Cloud Storage)</span>
           </div>
         </div>
 
@@ -622,8 +622,8 @@ export default function AdminPage() {
           </nav>
 
           <div className="hidden md:block pt-4 border-t border-slate-800 text-[11px] text-slate-500">
-            <p className="font-semibold text-slate-400">Zero Cloud Dependencies</p>
-            <p className="mt-0.5">All changes save instantly to your persistent local store.</p>
+            <p className="font-semibold text-emerald-400">Firebase Cloud Sync</p>
+            <p className="mt-0.5">All updates save directly to Google Cloud Firestore and sync across all devices.</p>
           </div>
         </aside>
 

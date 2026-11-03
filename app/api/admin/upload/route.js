@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers';
 import fs from 'fs';
 import path from 'path';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 async function checkAuth() {
   const cookieStore = await cookies();
@@ -66,8 +68,24 @@ export async function POST(request) {
       const uniqueName = `${originalBase || 'img'}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}${ext}`;
       const filePath = path.join(uploadsDir, uniqueName);
 
+      // Save local copy for fallback
       fs.writeFileSync(filePath, buffer);
-      uploadedUrls.push(`/uploads/${uniqueName}`);
+
+      let finalUrl = `/uploads/${uniqueName}`;
+
+      // Try uploading to Firebase Cloud Storage
+      try {
+        const storageRef = ref(storage, `catalog/${uniqueName}`);
+        await uploadBytes(storageRef, buffer, { contentType: mime || 'image/jpeg' });
+        const cloudUrl = await getDownloadURL(storageRef);
+        if (cloudUrl) {
+          finalUrl = cloudUrl;
+        }
+      } catch (storageErr) {
+        console.warn('[Firebase Storage] Falling back to local upload:', storageErr?.message || storageErr);
+      }
+
+      uploadedUrls.push(finalUrl);
     }
 
     return Response.json({
