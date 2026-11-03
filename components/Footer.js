@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import Logo from './Logo';
 
 function FacebookIcon({ className = "w-5 h-5" }) {
@@ -60,7 +59,7 @@ export default function Footer({ settings }) {
             <Logo isWhite={true} className="h-[60px] w-auto" />
           </div>
           <p className="text-sm text-paper/70 leading-relaxed max-w-sm">
-            Headquartered in the UAE, SSD Motors is your reliable gateway to the global automotive market. As premier exporters and traders, we supply worldwide clients with top-tier automotive products across all categories. Partner with us for consistent, hassle-free deliveries you can always depend on.
+            Headquartered in the UAE, SSG Motors is your reliable gateway to the global automotive market. As premier exporters and traders, we supply worldwide clients with top-tier automotive products across all categories. Partner with us for consistent, hassle-free deliveries you can always depend on.
           </p>
         </div>
 
@@ -118,10 +117,6 @@ export default function Footer({ settings }) {
 
       <div className="border-t border-paper/10 py-5 text-center text-xs text-paper/50 mono-label flex flex-wrap items-center justify-center gap-3">
         <span>© {new Date().getFullYear()} SevenSeas Global trading FZ LLC</span>
-        <span>•</span>
-        <Link href="/admin" className="hover:text-amber text-paper/70 transition-colors">
-          Admin Dashboard
-        </Link>
       </div>
     </footer>
   );
