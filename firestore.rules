@@ -37,6 +37,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Uploaded Images
+    match /uploadedImages/{imageId} {
+      allow read, write: if true;
+    }
+
     // Health / Connection test
     match /test/{testId} {
       allow read, write: if true;

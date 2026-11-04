@@ -26,7 +26,14 @@ export async function POST(request) {
   }
 }
 
-export async function GET() {
+export async function GET(request) {
+  const headerToken =
+    request.headers.get('x-admin-token') ||
+    request.headers.get('authorization')?.replace('Bearer ', '');
+  if (headerToken === TOKEN_VALUE) {
+    return Response.json({ authenticated: true });
+  }
+
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE);
   const isAuthenticated = token?.value === TOKEN_VALUE;

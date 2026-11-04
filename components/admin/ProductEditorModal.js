@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import ExcelSpecificationsGrid from './ExcelSpecificationsGrid';
 import ImageUploadButton from './ImageUploadButton';
+import ImageDropzone from './ImageDropzone';
 import { X, Plus, Trash2, Image as ImageIcon, Save, Check } from 'lucide-react';
 
 export default function ProductEditorModal({
@@ -221,34 +222,13 @@ export default function ProductEditorModal({
           {/* Row 2: Card Thumbnail Image & Highlights */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1">
-              <div className="flex items-center justify-between mb-1 gap-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  Primary Card Image
-                </label>
-                <ImageUploadButton
-                  buttonStyle="compact"
-                  label="Upload File"
-                  onUploaded={(url) => setCardImage(url)}
-                />
-              </div>
-              <input
-                type="text"
+              <ImageDropzone
+                label="Primary Card Image"
                 value={cardImage}
-                onChange={(e) => setCardImage(e.target.value)}
-                placeholder="https://... or click Upload File"
-                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400 mb-2 font-mono"
+                onChange={setCardImage}
+                helperText="Drag & drop primary vehicle photo or click to browse"
+                aspectRatio="aspect-[4/3]"
               />
-              <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={cardImage}
-                  alt="Card Preview"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://picsum.photos/seed/placeholder/800/600';
-                  }}
-                />
-              </div>
             </div>
 
             {/* Highlights (Quick Badges) */}
@@ -347,57 +327,64 @@ export default function ProductEditorModal({
             />
           </div>
 
-          {/* Photo Gallery URLs & Direct Upload */}
-          <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Vehicle Gallery Images (Detail Page Carousel)
-              </label>
-              <ImageUploadButton
-                buttonStyle="secondary"
-                multiple={true}
-                label="Upload Photos from Device (Multiple)"
-                onMultipleUploaded={(urls) => setGallery([...gallery, ...urls])}
-              />
-            </div>
-            <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                value={newGalleryUrl}
-                onChange={(e) => setNewGalleryUrl(e.target.value)}
-                placeholder="Or paste image URL (https://...)"
-                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400 font-mono"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddGalleryUrl(e);
-                }}
-              />
-              <button
-                type="button"
-                onClick={handleAddGalleryUrl}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition-colors cursor-pointer"
-              >
-                Add URL
-              </button>
+          {/* Photo Gallery: Drag-and-Drop + System Upload */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Vehicle Gallery Photos (Detail Page Carousel)
+                </label>
+                <p className="text-[11px] text-slate-400">
+                  Drag & drop multiple photos from your device, or click to browse.
+                </p>
+              </div>
+              <span className="text-xs font-mono font-bold text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-md border border-amber-400/20">
+                {gallery.length} {gallery.length === 1 ? 'photo' : 'photos'}
+              </span>
             </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-              {gallery.map((img, i) => (
-                <div
-                  key={i}
-                  className="group relative aspect-[4/3] rounded-lg overflow-hidden border border-slate-800 bg-slate-950"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img} alt={`Gallery ${i}`} className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveGalleryUrl(i)}
-                    className="absolute top-1 right-1 p-1 rounded bg-black/70 hover:bg-red-600 text-white transition-colors cursor-pointer"
+            <ImageDropzone
+              multiple={true}
+              value={gallery}
+              onChange={setGallery}
+              helperText="Drag and drop multiple vehicle photos here, or click to browse files"
+              className="w-full"
+            />
+
+            {/* Gallery Thumbnails List */}
+            {gallery.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5 pt-2">
+                {gallery.map((img, i) => (
+                  <div
+                    key={i}
+                    className="group relative aspect-[4/3] rounded-lg overflow-hidden border border-slate-800 bg-slate-950 shadow-sm"
                   >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img}
+                      alt={`Gallery ${i + 1}`}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://picsum.photos/seed/placeholder/800/600';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-1">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveGalleryUrl(i)}
+                        className="p-1.5 rounded-md bg-red-600/90 hover:bg-red-500 text-white transition-colors cursor-pointer shadow-lg"
+                        title="Remove photo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <span className="absolute bottom-1 left-1 bg-black/75 backdrop-blur-xs text-[10px] font-mono text-slate-300 px-1.5 py-0.5 rounded">
+                      #{i + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </form>
 

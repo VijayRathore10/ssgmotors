@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import ImageUploadButton from './ImageUploadButton';
+import ImageDropzone from './ImageDropzone';
 import { X, Save, Image as ImageIcon } from 'lucide-react';
 
 export default function CategoryEditorModal({ category = null, onClose, onSave }) {
@@ -132,34 +133,13 @@ export default function CategoryEditorModal({ category = null, onClose, onSave }
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1 gap-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Cover Photography
-              </label>
-              <ImageUploadButton
-                buttonStyle="compact"
-                label="Upload Image"
-                onUploaded={(url) => setImage(url)}
-              />
-            </div>
-            <input
-              type="text"
+            <ImageDropzone
+              label="Category Cover Photography"
               value={image}
-              onChange={(e) => setImage(e.target.value)}
-              placeholder="https://... or upload image above"
-              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs font-mono text-white focus:outline-none focus:border-amber-400 mb-2"
+              onChange={setImage}
+              helperText="Drag & drop category cover photo or click to browse files"
+              aspectRatio="aspect-[16/9]"
             />
-            <div className="relative aspect-[16/9] rounded-xl overflow-hidden border border-slate-800 bg-slate-950">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={image}
-                alt="Category Cover"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = 'https://picsum.photos/seed/placeholder/800/600';
-                }}
-              />
-            </div>
           </div>
 
           {/* Footer */}

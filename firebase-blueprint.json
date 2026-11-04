@@ -72,6 +72,18 @@
         "submittedAt": { "type": "string" }
       },
       "required": ["name", "email", "message"]
+    },
+    "UploadedImage": {
+      "title": "UploadedImage",
+      "description": "Uploaded image file backup and metadata",
+      "type": "object",
+      "properties": {
+        "filename": { "type": "string" },
+        "contentType": { "type": "string" },
+        "base64": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["filename", "contentType"]
     }
   },
   "firestore": {
@@ -94,6 +106,10 @@
     "/inquiries/{inquiryId}": {
       "schema": { "$ref": "#/entities/Inquiry" },
       "description": "Buyer inquiries and quotation requests"
+    },
+    "/uploadedImages/{imageId}": {
+      "schema": { "$ref": "#/entities/UploadedImage" },
+      "description": "Uploaded media and photos backup"
     }
   }
 }

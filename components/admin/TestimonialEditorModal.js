@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import ImageUploadButton from './ImageUploadButton';
+import ImageDropzone from './ImageDropzone';
 import { X, Save, Trash2, Plus, Image as ImageIcon } from 'lucide-react';
 
 export default function TestimonialEditorModal({ testimonial = null, onClose, onSave }) {
@@ -162,37 +163,15 @@ export default function TestimonialEditorModal({ testimonial = null, onClose, on
             </div>
 
             {photos.length < 4 && (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-3">
-                <div className="flex-1 flex gap-2">
-                  <input
-                    type="text"
-                    value={newPhotoUrl}
-                    onChange={(e) => setNewPhotoUrl(e.target.value)}
-                    placeholder="Paste photo URL (https://...)"
-                    className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white font-mono placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddPhoto(e);
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddPhoto}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition-colors cursor-pointer"
-                  >
-                    Add URL
-                  </button>
-                </div>
-                <span className="text-slate-500 text-[11px] uppercase font-mono text-center sm:text-left self-center">
-                  or
-                </span>
-                <ImageUploadButton
-                  buttonStyle="secondary"
+              <div className="mb-3">
+                <ImageDropzone
                   multiple={true}
-                  label="Upload Photos"
-                  onMultipleUploaded={(urls) => {
-                    const combined = [...photos, ...urls].slice(0, 4);
-                    setPhotos(combined);
+                  value={photos}
+                  onChange={(newPhotos) => {
+                    setPhotos(newPhotos.slice(0, 4));
                   }}
+                  helperText="Drag & drop delivery photos or click to browse (up to 4)"
+                  className="w-full"
                 />
               </div>
             )}

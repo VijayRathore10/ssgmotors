@@ -74,7 +74,10 @@ export default function AdminPage() {
   const verifyAuth = useCallback(async () => {
     setCheckingAuth(true);
     try {
-      const res = await fetch('/api/admin/auth');
+      const storedToken = typeof window !== 'undefined' ? sessionStorage.getItem('nik_admin_auth') || '' : '';
+      const res = await fetch('/api/admin/auth', {
+        headers: storedToken ? { 'x-admin-token': storedToken } : {},
+      });
       const data = await res.json();
       setIsAuthenticated(Boolean(data.authenticated));
     } catch {
@@ -136,6 +139,9 @@ export default function AdminPage() {
         throw new Error(data.error || 'Invalid administrator password');
       }
 
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('nik_admin_auth', 'nik-authorized-session-token-v1');
+      }
       setIsAuthenticated(true);
       loadData();
     } catch (err) {
@@ -146,6 +152,9 @@ export default function AdminPage() {
   };
 
   const handleLogout = async () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('nik_admin_auth');
+    }
     await fetch('/api/admin/auth', { method: 'DELETE' });
     setIsAuthenticated(false);
   };
