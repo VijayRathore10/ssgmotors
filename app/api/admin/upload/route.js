@@ -6,10 +6,10 @@ import { doc, setDoc } from 'firebase/firestore';
 
 const AUTH_COOKIE = 'nik_admin_auth';
 const TOKEN_VALUE = 'nik-authorized-session-token-v1';
+const CHUNK_SIZE = 650 * 1024; // 650KB chunks for Firestore 1MB doc limit safety
 
 async function checkAuth(request) {
   try {
-    // 1. Check custom header (immune to iframe third-party cookie blocking)
     const headerToken =
       request.headers.get('x-admin-token') ||
       request.headers.get('authorization')?.replace('Bearer ', '');
@@ -17,7 +17,6 @@ async function checkAuth(request) {
       return true;
     }
 
-    // 2. Check standard cookie
     const cookieStore = await cookies();
     const token = cookieStore.get(AUTH_COOKIE);
     if (token?.value === TOKEN_VALUE) {
@@ -29,6 +28,70 @@ async function checkAuth(request) {
   return false;
 }
 
+// Safely write to local disk without crashing on read-only filesystems (Cloud Run EROFS)
+function safeSaveToDisk(filename, buffer) {
+  // 1. Write to /tmp/uploads (guaranteed writable in Linux/Cloud Run environments)
+  try {
+    const tmpDir = path.join('/tmp', 'uploads');
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    fs.writeFileSync(path.join(tmpDir, filename), buffer);
+  } catch (tmpErr) {
+    console.warn('Could not write to /tmp/uploads:', tmpErr?.message);
+  }
+
+  // 2. Attempt write to public/uploads (works in local dev, ignored on EROFS read-only containers)
+  try {
+    const publicDir = path.join(process.cwd(), 'public', 'uploads');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    fs.writeFileSync(path.join(publicDir, filename), buffer);
+  } catch {
+    // EROFS (Read-only file system) in Cloud Run - safely ignore because /tmp and Firestore handle it
+  }
+}
+
+// Persist image permanently in Firestore database
+async function saveToFirestore(filename, buffer, mimeType) {
+  try {
+    const base64Data = buffer.toString('base64');
+    const docRef = doc(db, 'uploadedImages', filename);
+
+    if (base64Data.length <= 800 * 1024) {
+      // Direct single-document storage
+      await setDoc(docRef, {
+        filename,
+        contentType: mimeType || 'image/jpeg',
+        base64: base64Data,
+        size: buffer.length,
+        isChunked: false,
+        createdAt: new Date().toISOString(),
+      });
+    } else {
+      // Chunked storage for large images (>800KB base64)
+      const totalChunks = Math.ceil(base64Data.length / CHUNK_SIZE);
+      await setDoc(docRef, {
+        filename,
+        contentType: mimeType || 'image/jpeg',
+        size: buffer.length,
+        isChunked: true,
+        totalChunks,
+        createdAt: new Date().toISOString(),
+      });
+
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = base64Data.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        const chunkRef = doc(db, 'uploadedImages', filename, 'chunks', String(i));
+        await setDoc(chunkRef, { index: i, chunk });
+      }
+    }
+  } catch (err) {
+    console.warn('[Firestore upload persistence warning]:', err?.message || err);
+  }
+}
+
 export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
@@ -38,22 +101,16 @@ export async function POST(request) {
 
   try {
     const contentType = request.headers.get('content-type') || '';
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
     const uploadedUrls = [];
 
-    // Support both FormData (standard) and JSON (fallback for base64 uploads)
     if (contentType.includes('application/json')) {
       const body = await request.json();
       const rawList = Array.isArray(body.files) ? body.files : (body.file ? [body.file] : []);
 
       for (const item of rawList) {
         if (!item?.data) continue;
-        const base64Data = item.data.replace(/^data:image\/[a-z0-9-+.]+;base64,/, '');
-        const buffer = Buffer.from(base64Data, 'base64');
+        const cleanBase64 = item.data.replace(/^data:image\/[a-z0-9-+.]+;base64,/, '');
+        const buffer = Buffer.from(cleanBase64, 'base64');
         const mime = item.type || 'image/jpeg';
         let ext = path.extname(item.name || '').toLowerCase() || '.webp';
 
@@ -64,27 +121,16 @@ export async function POST(request) {
           .slice(0, 32);
 
         const uniqueName = `${originalBase || 'img'}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}${ext}`;
-        const filePath = path.join(uploadsDir, uniqueName);
-        fs.writeFileSync(filePath, buffer);
 
-        // Backup to Firestore if <= 900KB
-        if (buffer.length <= 900 * 1024) {
-          try {
-            await setDoc(doc(db, 'uploadedImages', uniqueName), {
-              filename: uniqueName,
-              contentType: mime,
-              base64: base64Data,
-              createdAt: new Date().toISOString(),
-            });
-          } catch (dbErr) {
-            console.warn('[Firestore upload backup warning]:', dbErr?.message || dbErr);
-          }
-        }
+        // Safe disk save (no EROFS crash)
+        safeSaveToDisk(uniqueName, buffer);
+
+        // Firestore persistent cloud save
+        await saveToFirestore(uniqueName, buffer, mime);
 
         uploadedUrls.push(`/uploads/${uniqueName}`);
       }
     } else {
-      // Standard FormData processing
       const formData = await request.formData();
       const files = formData.getAll('files');
       const singleFile = formData.get('file');
@@ -100,7 +146,6 @@ export async function POST(request) {
         const buffer = Buffer.from(await file.arrayBuffer());
         const mime = file.type || '';
 
-        // Safe extension resolution
         let ext = path.extname(file.name || '').toLowerCase();
         if (!ext) {
           if (mime.includes('jpeg') || mime.includes('jpg')) ext = '.jpg';
@@ -118,24 +163,12 @@ export async function POST(request) {
           .slice(0, 32);
 
         const uniqueName = `${originalBase || 'img'}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}${ext}`;
-        const filePath = path.join(uploadsDir, uniqueName);
 
-        // Write to local filesystem
-        fs.writeFileSync(filePath, buffer);
+        // Safe disk save (no EROFS crash)
+        safeSaveToDisk(uniqueName, buffer);
 
-        // Backup to Firestore if within document limit (<= 900KB)
-        if (buffer.length <= 900 * 1024) {
-          try {
-            await setDoc(doc(db, 'uploadedImages', uniqueName), {
-              filename: uniqueName,
-              contentType: mime || 'image/jpeg',
-              base64: buffer.toString('base64'),
-              createdAt: new Date().toISOString(),
-            });
-          } catch (dbErr) {
-            console.warn('[Firestore upload backup warning]:', dbErr?.message || dbErr);
-          }
-        }
+        // Firestore persistent cloud save
+        await saveToFirestore(uniqueName, buffer, mime);
 
         uploadedUrls.push(`/uploads/${uniqueName}`);
       }

@@ -1,9 +1,50 @@
 import fs from 'fs';
 import path from 'path';
 import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 
 export const dynamic = 'force-dynamic';
+
+function getMimeType(filename) {
+  const ext = path.extname(filename).toLowerCase();
+  if (ext === '.png') return 'image/png';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.gif') return 'image/gif';
+  if (ext === '.svg') return 'image/svg+xml';
+  return 'image/jpeg';
+}
+
+function readFromLocal(filename) {
+  // 1. Check /tmp/uploads (Cloud Run writable disk)
+  try {
+    const tmpPath = path.join('/tmp', 'uploads', filename);
+    if (fs.existsSync(tmpPath)) {
+      return fs.readFileSync(tmpPath);
+    }
+  } catch {}
+
+  // 2. Check public/uploads (local dev / build artifacts)
+  try {
+    const publicPath = path.join(process.cwd(), 'public', 'uploads', filename);
+    if (fs.existsSync(publicPath)) {
+      return fs.readFileSync(publicPath);
+    }
+  } catch {}
+
+  return null;
+}
+
+function writeToTmpCache(filename, buffer) {
+  try {
+    const tmpDir = path.join('/tmp', 'uploads');
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    fs.writeFileSync(path.join(tmpDir, filename), buffer);
+  } catch (err) {
+    console.warn('Could not cache to /tmp/uploads:', err?.message);
+  }
+}
 
 export async function GET(request, context) {
   try {
@@ -16,50 +57,59 @@ export async function GET(request, context) {
     }
 
     const safeFilename = path.basename(filename);
-    const localPath = path.join(process.cwd(), 'public', 'uploads', safeFilename);
 
-    // 1. Check if file is already present on local disk
-    if (fs.existsSync(localPath)) {
-      const buffer = fs.readFileSync(localPath);
-      const ext = path.extname(safeFilename).toLowerCase();
-      let contentType = 'image/jpeg';
-      if (ext === '.png') contentType = 'image/png';
-      else if (ext === '.webp') contentType = 'image/webp';
-      else if (ext === '.gif') contentType = 'image/gif';
-      else if (ext === '.svg') contentType = 'image/svg+xml';
-
-      return new Response(buffer, {
+    // 1. Fast path: Read from local /tmp or public disk
+    const localBuffer = readFromLocal(safeFilename);
+    if (localBuffer) {
+      return new Response(localBuffer, {
         headers: {
-          'Content-Type': contentType,
+          'Content-Type': getMimeType(safeFilename),
           'Cache-Control': 'public, max-age=31536000, immutable',
         },
       });
     }
 
-    // 2. Fallback: Restore from Firestore database if container was redeployed
+    // 2. Cloud recovery: Restore from Firestore database
     try {
-      const docSnap = await getDoc(doc(db, 'uploadedImages', safeFilename));
+      const docRef = doc(db, 'uploadedImages', safeFilename);
+      const docSnap = await getDoc(docRef);
+
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data?.base64) {
-          const buffer = Buffer.from(data.base64, 'base64');
-          // Cache to local disk for subsequent requests
-          const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
+        let fullBase64 = data?.base64 || '';
+
+        // If chunked into subcollection
+        if (data?.isChunked && data?.totalChunks) {
+          const chunksCol = collection(db, 'uploadedImages', safeFilename, 'chunks');
+          const chunksSnap = await getDocs(chunksCol);
+          const chunkMap = {};
+          chunksSnap.forEach((c) => {
+            const chunkData = c.data();
+            chunkMap[chunkData.index] = chunkData.chunk;
+          });
+
+          fullBase64 = '';
+          for (let i = 0; i < data.totalChunks; i++) {
+            fullBase64 += chunkMap[i] || '';
           }
-          fs.writeFileSync(localPath, buffer);
+        }
+
+        if (fullBase64) {
+          const buffer = Buffer.from(fullBase64, 'base64');
+
+          // Cache in writable /tmp directory for rapid subsequent hits
+          writeToTmpCache(safeFilename, buffer);
 
           return new Response(buffer, {
             headers: {
-              'Content-Type': data.contentType || 'image/jpeg',
+              'Content-Type': data.contentType || getMimeType(safeFilename),
               'Cache-Control': 'public, max-age=31536000, immutable',
             },
           });
         }
       }
     } catch (restoreErr) {
-      console.warn('Could not restore image from Firestore backup:', restoreErr?.message);
+      console.warn('Firestore image restoration warning:', restoreErr?.message);
     }
 
     return new Response('Image Not Found', { status: 404 });

@@ -40,6 +40,9 @@ service cloud.firestore {
     // Uploaded Images
     match /uploadedImages/{imageId} {
       allow read, write: if true;
+      match /{allChildren=**} {
+        allow read, write: if true;
+      }
     }
 
     // Health / Connection test
