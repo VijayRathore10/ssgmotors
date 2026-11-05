@@ -45,8 +45,8 @@ export default function InquiryForm({ productName }) {
         <input type="email" name="email" required className="w-full border border-line px-3 py-2 text-sm focus:outline-none focus:border-freight" />
       </div>
       <div>
-        <label className="mono-label text-[11px] uppercase text-graphite block mb-1">Phone (optional)</label>
-        <input name="phone" className="w-full border border-line px-3 py-2 text-sm focus:outline-none focus:border-freight" />
+        <label className="mono-label text-[11px] uppercase text-graphite block mb-1">WhatsApp / Contact (optional)</label>
+        <input name="phone" placeholder="e.g. +971 50..." className="w-full border border-line px-3 py-2 text-sm focus:outline-none focus:border-freight" />
       </div>
       <div>
         <label className="mono-label text-[11px] uppercase text-graphite block mb-1">Message</label>
